@@ -116,6 +116,7 @@ def read_repository_files(directory) -> pd.DataFrame:
                 k not in file_path for k in [".git", "__pycache__", "xcodeproj"]
             ):
                 file_paths.append((os.path.dirname(root), file_path))
+                #  ('hf_public_repos/experiment/resources/js', 'hf_public_repos/experiment/resources/js/Components/InputLabel.vue')
 
     # Process files sequentially.
     print(f"Total file paths: {len(file_paths)}.")
@@ -124,6 +125,8 @@ def read_repository_files(directory) -> pd.DataFrame:
     for i, (directory_name, file_path) in enumerate(tqdm(file_paths)):
         file_content = process_file(directory_name, file_path)
 
+        print(file_content)
+        return
         if file_content["content"] != "":
             temp_df = pd.DataFrame.from_dict([file_content])
             df = pd.concat([df, temp_df])
@@ -145,9 +148,9 @@ def read_repository_files(directory) -> pd.DataFrame:
 
 if __name__ == "__main__":
     df = read_repository_files(MIRROR_DIRECTORY)
-    print("DataFrame created, creating dataset...")
-    upload_to_hub(file_format=FEATHER_FORMAT, repo_id=DATASET_ID)
-    print(f"{FEATHER_FORMAT} files uploaded to the Hub.")
-    if not SERIALIZE_IN_CHUNKS:
-        dataset = Dataset.from_pandas(df)
-        dataset.push_to_hub(DATASET_ID, private=True)
+    # print("DataFrame created, creating dataset...")
+    # upload_to_hub(file_format=FEATHER_FORMAT, repo_id=DATASET_ID)
+    # print(f"{FEATHER_FORMAT} files uploaded to the Hub.")
+    # if not SERIALIZE_IN_CHUNKS:
+    #     dataset = Dataset.from_pandas(df)
+    #     dataset.push_to_hub(DATASET_ID, private=True)

@@ -1,16 +1,8 @@
-import subprocess
-from time import sleep
+asdf = [
+    iterator
+    for iterator in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    if (iterator % 2 == 0)
+    if (iterator % 3 == 0)
+]
 
-with subprocess.Popen(["python", "timer.py", "5"], stdout=subprocess.PIPE) as process:
-
-    def poll_and_read():
-        print(f"Output from poll: {process.poll()}")
-        print(f"Output from stdout: {process.stdout.read1().decode('utf-8')}")
-
-    poll_and_read()
-    sleep(3)
-    poll_and_read()
-    sleep(3)
-    poll_and_read()
-
-print("hit")
+print(asdf)
