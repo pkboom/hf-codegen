@@ -7,9 +7,12 @@ from typing import Dict
 from huggingface_hub import HfApi, create_repo
 import tempfile
 import subprocess
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 MIRROR_DIRECTORY = "hf_public_repos"
-DATASET_ID = "hf-codegen"
+DATASET_ID = "codegen"
 SERIALIZE_IN_CHUNKS = 10000
 FEATHER_FORMAT = "ftr"
 
@@ -53,7 +56,12 @@ def upload_to_hub(file_format: str, repo_id: str):
     """Moves all the files matching `file_format` to a folder and
     uploads the folder to the Hugging Face Hub."""
     api = HfApi()
-    repo_id = create_repo(repo_id=repo_id, exist_ok=True, repo_type="dataset").repo_id
+    repo_id = create_repo(
+        repo_id=repo_id,
+        exist_ok=True,
+        repo_type="dataset",
+        token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+    ).repo_id
 
     # e.g. /var/folders/gq/x0p5x61x59b0l02wwlvcqk_h0000gn/T/tmpmug167ge
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -61,7 +69,12 @@ def upload_to_hub(file_format: str, repo_id: str):
         command = f"mv *.{file_format} {tmpdirname}"
         # _ = subprocess.run(command.split())
         _ = subprocess.call(command, shell=True)
-        api.upload_folder(repo_id=repo_id, folder_path=tmpdirname, repo_type="dataset")
+        api.upload_folder(
+            repo_id=repo_id,
+            folder_path=tmpdirname,
+            repo_type="dataset",
+            token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+        )
 
 
 def filter_code_cell(cell) -> bool:
@@ -151,6 +164,11 @@ if __name__ == "__main__":
     print("DataFrame created, creating dataset...")
     upload_to_hub(file_format=FEATHER_FORMAT, repo_id=DATASET_ID)
     print(f"{FEATHER_FORMAT} files uploaded to the Hub.")
-    if not SERIALIZE_IN_CHUNKS:
+    if SERIALIZE_IN_CHUNKS:
+        print("Serializing dataframe...")
         dataset = Dataset.from_pandas(df)
-        dataset.push_to_hub(DATASET_ID, private=True)
+        dataset.push_to_hub(
+            DATASET_ID,
+            private=True,
+            token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+        )
