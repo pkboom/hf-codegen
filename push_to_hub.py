@@ -4,6 +4,7 @@ from tqdm import tqdm
 import pandas as pd
 import glob
 from dotenv import load_dotenv, find_dotenv
+import os
 
 load_dotenv(find_dotenv())
 
@@ -28,5 +29,8 @@ if __name__ == "__main__":
     final_df = pd.concat(all_dfs)
     print(f"Final DF prepared containing {len(final_df)} rows.")
 
-    # dataset = Dataset.from_pandas(final_df)
-    # dataset.push_to_hub("hf-codegen-v2")
+    dataset = Dataset.from_pandas(final_df)
+    dataset.push_to_hub(
+        "codegen-v2",
+        token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+    )
