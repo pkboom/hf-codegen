@@ -13,7 +13,6 @@ load_dotenv(find_dotenv())
 
 MIRROR_DIRECTORY = "hf_public_repos"
 DATASET_ID = "codegen"
-SERIALIZE_IN_CHUNKS = 10000
 FEATHER_FORMAT = "ftr"
 
 # Block the following formats.
@@ -52,29 +51,13 @@ OTHERS = [
 ANTI_FOMATS = tuple(IMAGE + VIDEO + DOC + AUDIO + ARCHIVE + OTHERS)
 
 
-def upload_to_hub(file_format: str, repo_id: str):
-    """Moves all the files matching `file_format` to a folder and
-    uploads the folder to the Hugging Face Hub."""
-    api = HfApi()
+def create_repo_on_hf(repo_id: str):
     repo_id = create_repo(
         repo_id=repo_id,
         exist_ok=True,
         repo_type="dataset",
         token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
     ).repo_id
-
-    # e.g. /var/folders/gq/x0p5x61x59b0l02wwlvcqk_h0000gn/T/tmpmug167ge
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # os.makedirs(tmpdirname)
-        command = f"mv *.{file_format} {tmpdirname}"
-        # _ = subprocess.run(command.split())
-        _ = subprocess.call(command, shell=True)
-        api.upload_folder(
-            repo_id=repo_id,
-            folder_path=tmpdirname,
-            repo_type="dataset",
-            token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
-        )
 
 
 def filter_code_cell(cell) -> bool:
@@ -121,7 +104,6 @@ def read_repository_files(directory) -> pd.DataFrame:
     """Reads the files from the locally cloned repositories."""
     file_paths = []
     df = pd.DataFrame(columns=["repo_id", "file_path", "content"])
-    chunk_flag = 0
 
     # Recursively find all files within the directory
     for root, _, files in os.walk(directory):
@@ -137,38 +119,26 @@ def read_repository_files(directory) -> pd.DataFrame:
     print(f"Total file paths: {len(file_paths)}.")
     print("Reading file contents...")
 
-    for i, (directory_name, file_path) in enumerate(tqdm(file_paths)):
+    for directory_name, file_path in tqdm(file_paths):
         file_content = process_file(directory_name, file_path)
 
         if file_content["content"] != "":
             temp_df = pd.DataFrame.from_dict([file_content])
             df = pd.concat([df, temp_df])
 
-            if (
-                SERIALIZE_IN_CHUNKS
-                and len(df) != 0
-                and (len(df) % SERIALIZE_IN_CHUNKS == 0)
-            ):
-                df_path = f"df_chunk_{chunk_flag}_{len(df)}.{FEATHER_FORMAT}"
-                print(f"Serializing dataframe to {df_path}...")
-                df.reset_index().to_feather(df_path)
-                del df
-                df = pd.DataFrame(columns=["repo_id", "file_path", "content"])
-                chunk_flag += 1
-
     return df
 
 
 if __name__ == "__main__":
     df = read_repository_files(MIRROR_DIRECTORY)
+
     print("DataFrame created, creating dataset...")
-    upload_to_hub(file_format=FEATHER_FORMAT, repo_id=DATASET_ID)
-    print(f"{FEATHER_FORMAT} files uploaded to the Hub.")
-    if SERIALIZE_IN_CHUNKS:
-        print("Serializing dataframe...")
-        dataset = Dataset.from_pandas(df)
-        dataset.push_to_hub(
-            DATASET_ID,
-            private=True,
-            token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
-        )
+    create_repo_on_hf(repo_id=DATASET_ID)
+
+    print("Serializing dataframe...")
+    dataset = Dataset.from_pandas(df)
+    dataset.push_to_hub(
+        DATASET_ID,
+        private=True,
+        token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+    )

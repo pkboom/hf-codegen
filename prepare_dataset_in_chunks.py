@@ -153,6 +153,8 @@ def read_repository_files(directory) -> pd.DataFrame:
 
 if __name__ == "__main__":
     df = read_repository_files(MIRROR_DIRECTORY)
+
     print("DataFrame created, creating dataset...")
     upload_to_hub(file_format=FEATHER_FORMAT, repo_id=DATASET_ID)
+
     print(f"{FEATHER_FORMAT} files uploaded to the Hub.")
