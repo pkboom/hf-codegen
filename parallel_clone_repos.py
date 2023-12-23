@@ -43,11 +43,14 @@ def mirror_repositories():
     # Get the list of repositories in the organization
     if not os.environ["GH_ACCESS_TOKEN"]:
         raise ValueError("You must set `GH_ACCESS_TOKEN` as an env variable.")
+
     repositories = get_repos(ORG, os.environ["GH_ACCESS_TOKEN"])
+
     print(f"Total repositories found: {len(repositories)}.")
 
     # Mirror repositories using multiprocessing
     print("Cloning repositories.")
+
     with Pool() as pool:
         pool.map(mirror_repository, repositories)
 
